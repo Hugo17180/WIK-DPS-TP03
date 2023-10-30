@@ -1,0 +1,60 @@
+version: '3.8'
+services:
+  app:
+
+    # Définition du Dockerfile à build et à utiliser
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+
+    # Nombre de réplicas souhaités du même container 
+    deploy:
+      replicas: 4 
+    restart: always
+
+    environment:
+      - PORT=8080
+    
+   
+    networks:
+      - front-network
+
+   
+    volumes:
+      - db_data:/app/bdd.db
+
+
+  proxy:
+
+    # L'image Docker a utilisé pour le service
+    image: nginx:latest
+
+    # Monter un fichier du répertoire courant de l'hôte
+    # sur le service
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    
+    # Configurer le port-forwarding entre l'hôte et le service
+    ports:
+      - 8080:80
+
+    # Définir une relation de dépendance
+    # Si my_app n'est pas prêt alors pas de proxy
+    depends_on: 
+      - app
+    
+    # Configure le réseau du service
+    # Il est accessible seulement via le réseau nommé
+    # front-network
+    networks:
+      - front-network
+
+# Déclaration des réseaux
+networks:
+  # Un network nommé front-network qui utilise le driver bridge
+  front-network:
+    driver: bridge
+
+# Déclaration des volumes nommés
+volumes:
+  db_data:
